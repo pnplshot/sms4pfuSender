@@ -26,17 +26,26 @@ public class RestApiClient {
     private final RestTemplate restTemplate;
     private final String apiUrl;
     private final String source;
+    private final String contentType;
+    private final String serviceType;
+    private final String bearerType;
 
     public RestApiClient(
             SmsRepository smsRepository,
             RestTemplate restTemplate,
             @Value("${external.api.url}") String apiUrl,
-            @Value("${external.api.source}") String source
+            @Value("${external.api.source}") String source,
+            @Value("${external.api.contentType}") String contentType,
+            @Value("${external.api.serviceType}") String serviceType,
+            @Value("${external.api.bearerType}") String bearerType
     ) {
         this.smsRepository = smsRepository;
         this.restTemplate = restTemplate;
         this.apiUrl = apiUrl;
         this.source = source;
+        this.contentType = contentType;
+        this.serviceType = serviceType;
+        this.bearerType = bearerType;
         log.info("RestApiClient initialized with apiUrl: {}, source: {}", apiUrl, source);
     }
 
@@ -60,8 +69,10 @@ public class RestApiClient {
             message.setMessage("Для отримання підтримки на оплату твердого палива відповідно до постанови КМУ від 07.11.2023 №1173 просимо до 01.12.2023 надати згоду Пенсійному фонду на передачу персональних даних одержувача та членів домогосподарства надавачам допомоги. Надіслати відповідь ТАК чи НІ");
 
             // Создаем тело запроса
-            String requestBody = String.format("{ \"source\": \"%s\", \"destination\": \"%s\", \"content\": \"%s\" }",
-                    source, message.getNumber(), message.getMessage());
+            String requestBody = String.format("{ \"source\": \"%s\", \"destination\": \"%s\", \"contentType\": \"%s\", \"serviceType\": \"%s\", \"bearerType\": \"%s\", \"content\": \"%s\" }",
+                    source, message.getNumber(), contentType, serviceType, bearerType,
+
+                    message.getMessage());
 
             // Создаем объект HttpEntity, объединяющий тело запроса и заголовки
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
