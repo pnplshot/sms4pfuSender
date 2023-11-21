@@ -8,5 +8,6 @@ import java.util.List;
 @Repository
 public interface SmsRepository extends JpaRepository<Sms, Long> {
     List<Sms> findByStatusIsNull();
+    List<Sms> findByMsgIdIsNull();
 
 }

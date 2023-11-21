@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Base64;
 
 
 @Service
@@ -29,6 +30,8 @@ public class RestApiClient {
     private final String contentType;
     private final String serviceType;
     private final String bearerType;
+    private final String login;
+    private final String password;
 
     public RestApiClient(
             SmsRepository smsRepository,
@@ -37,7 +40,9 @@ public class RestApiClient {
             @Value("${external.api.source}") String source,
             @Value("${external.api.contentType}") String contentType,
             @Value("${external.api.serviceType}") String serviceType,
-            @Value("${external.api.bearerType}") String bearerType
+            @Value("${external.api.bearerType}") String bearerType,
+            @Value("${authorization.login}") String login,
+            @Value("${authorization.password}") String password
     ) {
         this.smsRepository = smsRepository;
         this.restTemplate = restTemplate;
@@ -46,6 +51,8 @@ public class RestApiClient {
         this.contentType = contentType;
         this.serviceType = serviceType;
         this.bearerType = bearerType;
+        this.login = login;
+        this.password = password;
         log.info("RestApiClient initialized with apiUrl: {}, source: {}", apiUrl, source);
     }
 
@@ -55,9 +62,20 @@ public class RestApiClient {
         log.info("api url:"+apiUrl);
         log.info("source :"+source);
 
-        List<Sms> messages = smsRepository.findByStatusIsNull();
+        List<Sms> messages = smsRepository.findByMsgIdIsNull();
 
         HttpHeaders headers = new HttpHeaders();
+
+        // Создаем строку логина и пароля в формате "username:password"
+        String credentials = login + ":" + password;
+
+        // Кодируем логин и пароль в Base64
+        String base64Credentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+
+        // Устанавливаем заголовок Authorization
+        headers.set("Authorization", "Basic " + base64Credentials);
+
+
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         log.info(String.valueOf("size of messages :"+messages.size()));
@@ -70,9 +88,7 @@ public class RestApiClient {
 
             // Создаем тело запроса
             String requestBody = String.format("{ \"source\": \"%s\", \"destination\": \"%s\", \"contentType\": \"%s\", \"serviceType\": \"%s\", \"bearerType\": \"%s\", \"content\": \"%s\" }",
-                    source, message.getNumber(), contentType, serviceType, bearerType,
-
-                    message.getMessage());
+                    source, message.getNumber(), contentType, serviceType, bearerType, message.getMessage());
 
             // Создаем объект HttpEntity, объединяющий тело запроса и заголовки
             HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
